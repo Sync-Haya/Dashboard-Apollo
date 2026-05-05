@@ -1,0 +1,17 @@
+{
+  "dashboard_api_url": "https://59f1225c6.preview.abacusai.app/api/chamados",
+  "dropdesk": {
+    "url": "https://atendimento.dropdesk.app.br/chat",
+    "email": "leonardofelipeapollo@gmail.com",
+    "senha": "Sicom@sicom2025"
+  },
+  "apollo": {
+    "url": "http://apollosg.ddns.com.br:9300/",
+    "usuario": "leonardo felipe",
+    "senha": "252525"
+  },
+  "filtros": {
+    "status": ["Aberto", "Atendendo", "Fechado"],
+    "setor": "Suporte"
+  }
+}

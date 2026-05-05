@@ -1,0 +1,69 @@
+generator client {
+    provider = "prisma-client-js"
+    binaryTargets = ["native", "linux-musl-arm64-openssl-3.0.x"]
+}
+
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+model Chamado {
+  id            String   @id @default(cuid())
+  externalId    String?  
+  sistema       String   // DROPDESK or APOLLO
+  titulo        String
+  descricao     String?  
+  status        String   // ABERTO, ATENDENDO, FECHADO
+  setor         String   @default("Suporte")
+  prioridade    String?  @default("Normal")
+  cliente       String?  
+  atendente     String?  
+  criadoEm      DateTime @default(now())
+  atualizadoEm  DateTime @updatedAt
+  fechadoEm     DateTime?
+  tempoResposta Int?     // minutos
+  
+  @@index([sistema])
+  @@index([status])
+  @@index([criadoEm])
+  @@index([atendente])
+  @@index([sistema, status, criadoEm])
+}
+
+model Snapshot {
+  id          String   @id @default(cuid())
+  timestamp   DateTime @default(now())
+  sistema     String
+  abertos     Int      @default(0)
+  atendendo   Int      @default(0)
+  fechados    Int      @default(0)
+  totalDia    Int      @default(0)
+  
+  @@index([timestamp])
+  @@index([sistema, timestamp])
+}
+
+model Atendente {
+  id                String   @id @default(cuid())
+  nome              String   @unique
+  sistema           String
+  chamadosAbertos   Int      @default(0)
+  chamadosAtendendo Int      @default(0)
+  chamadosFechados  Int      @default(0)
+  tempoMedioMin     Int?     
+  atualizadoEm      DateTime @updatedAt
+  
+  @@index([sistema])
+}
+
+model SyncLog {
+  id        String   @id @default(cuid())
+  timestamp DateTime @default(now())
+  sistema   String
+  sucesso   Boolean  @default(true)
+  mensagem  String?
+  registros Int      @default(0)
+  
+  @@index([timestamp])
+}
