@@ -154,7 +154,16 @@ export function DashboardClient() {
     return () => document.removeEventListener('fullscreenchange', handler);
   }, []);
 
-  const ap = data?.apollo || { andamento: 0, finalizado: 0, totalDia: 0, atendentes: [], timeline: [], recentes: [] };
+  const ap = data?.apollo || { 
+    andamento: 0, 
+    finalizado: 0, 
+    totalDia: 0, 
+    tempoMedioGeral: 0,
+    atendentes: [], 
+    timeline: [], 
+    recentes: [],
+    error: null
+  };
 
   if (error && !data) {
     return (
