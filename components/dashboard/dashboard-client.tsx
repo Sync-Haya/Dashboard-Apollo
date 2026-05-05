@@ -48,30 +48,35 @@ export function DashboardClient() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedDate, setSelectedDate] = useState(getTodayStr());
+  const [selectedDate, setSelectedDate] = useState('');
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [currentTime, setCurrentTime] = useState('');
   const [lastUpdate, setLastUpdate] = useState('');
   const [token, setToken] = useState<string | null>(null);
   const [showTokenInput, setShowTokenInput] = useState(false);
   const [tempToken, setTempToken] = useState('');
+  const [mounted, setMounted] = useState(false);
 
   // Carregar token do localStorage no início
   useEffect(() => {
+    setMounted(true);
+    setSelectedDate(getTodayStr());
     const savedToken = localStorage.getItem('apollo_dashboard_token');
     if (savedToken) setToken(savedToken);
   }, []);
 
   useEffect(() => {
+    if (!mounted) return;
     const updateTime = () => {
       setCurrentTime(new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
     };
     updateTime();
     const interval = setInterval(updateTime, 1000);
     return () => clearInterval(interval);
-  }, []);
+  }, [mounted]);
 
   const fetchData = useCallback(async () => {
+    if (!mounted) return;
     // Se não tiver token, usa dados mock
     if (!token) {
       setData(mockDashboardData);
@@ -153,6 +158,14 @@ export function DashboardClient() {
     document.addEventListener('fullscreenchange', handler);
     return () => document.removeEventListener('fullscreenchange', handler);
   }, []);
+
+  if (!mounted) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="w-8 h-8 text-primary animate-spin" />
+      </div>
+    );
+  }
 
   const ap = data?.apollo || { 
     andamento: 0, 

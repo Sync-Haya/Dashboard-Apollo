@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Loader2 } from 'lucide-react';
 
 interface RecentTicket {
   id: string;
@@ -25,14 +26,18 @@ const statusColors: Record<string, string> = {
 };
 
 export function RecentTickets({ data, title }: RecentTicketsProps) {
-  const [now, setNow] = useState(new Date());
+  const [now, setNow] = useState<Date | null>(null);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
+    setNow(new Date());
     const interval = setInterval(() => setNow(new Date()), 60000);
     return () => clearInterval(interval);
   }, []);
 
   const getDurationMinutes = (t: RecentTicket) => {
+    if (!now) return 0;
     const start = new Date(t.criadoEm).getTime();
     if (t.status === 'Finalizado' && t.finalizadoEm) {
       const end = new Date(t.finalizadoEm).getTime();
@@ -40,6 +45,20 @@ export function RecentTickets({ data, title }: RecentTicketsProps) {
     }
     return Math.max(0, Math.floor((now.getTime() - start) / 60000));
   };
+
+  // Prevenir erro de hidratação (SSR vs Client)
+  if (!mounted) {
+    return (
+      <div className="flex flex-col h-full bg-card/40 backdrop-blur-md border border-white/5 rounded-2xl overflow-hidden min-h-[300px]">
+        <div className="p-4 border-b border-white/5 bg-white/5">
+          <h3 className="text-base xl:text-lg font-display font-bold tracking-tight text-white">{title}</h3>
+        </div>
+        <div className="flex-1 flex items-center justify-center">
+          <Loader2 className="w-6 h-6 text-primary animate-spin" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-full bg-card/40 backdrop-blur-md border border-white/5 rounded-2xl overflow-hidden">
