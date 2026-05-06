@@ -11,10 +11,8 @@ Este é um dashboard premium desenvolvido para o monitoramento em tempo real de 
 - **Modo de Apresentação**: Por padrão, o projeto inicia com dados fictícios para demonstrações seguras. O acesso aos dados de produção requer a inserção de um token JWT válido.
 - **Gestão de SLA**:
   - Contador de minutos decorridos em tempo real para chamados abertos.
-  - Cálculo de duração total para chamados finalizados.
-  - Tempo médio de resolução por atendente e geral.
-- **Gráficos de Fluxo**: Gráfico de linhas dinâmico que mostra o saldo de chamados pendentes vs. finalizados por hora.
-- **Ranking de Produtividade**: Tabela detalhada de desempenho por técnico.
+  - Duração total exibida para chamados finalizados.
+- **Gráficos de Fluxo**: Gráfico de áreas dinâmico em 4 quadrantes para monitoramento de eventos, com véus de transparência que indicam fluxo de chamados abertos vs finalizados por hora.
 
 ## 🛠 Tecnologias Utilizadas
 
@@ -63,7 +61,7 @@ O dashboard estará disponível em `http://localhost:3000`.
 
 ## 📄 Licença
 
-Este projeto é de uso restrito e privado.
+Este projeto é de código aberto (Open Source) e totalmente gratuito. Sinta-se livre para baixar, modificar, distribuir e utilizar conforme a sua necessidade.
 
 ---
 Desenvolvido por **Antigravity AI** para **Apollo Suporte**.

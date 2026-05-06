@@ -41,10 +41,19 @@ export async function GET(request: Request) {
       let cumulativeOpened = 0;
       let cumulativeFinished = 0;
 
+      const now = new Date();
+      // Ajustar para fuso horário de Brasília (UTC-3)
+      const brasiliaOffset = -3 * 60;
+      const localTime = new Date(now.getTime() + (brasiliaOffset + now.getTimezoneOffset()) * 60000);
+      
+      // Se a data da consulta não for hoje, mostramos todas as horas. 
+      // Se for hoje, zeramos as horas futuras.
+      const isToday = todayStr === getTodayStr();
+      const currentHour = localTime.getHours();
+
       for (let h = 7; h <= 20; h++) {
         const horaStr = `${h.toString().padStart(2, '0')}:00`;
         
-        // Contar quantos abriram NESTA hora e quantos finalizaram NESTA hora
         let openedInHour = 0;
         let finishedInHour = 0;
 
@@ -68,14 +77,16 @@ export async function GET(request: Request) {
         cumulativeOpened += openedInHour;
         cumulativeFinished += finishedInHour;
 
+        const isFuture = isToday && h > currentHour;
+
         // Abertos Agora = Total que abriu até agora - Total que fechou até agora
-        // Garantir que não seja negativo
-        const abertosAgora = Math.max(0, cumulativeOpened - cumulativeFinished);
+        const abertosAgora = isFuture ? 0 : Math.max(0, cumulativeOpened - cumulativeFinished);
+        const finalizadosReal = isFuture ? 0 : finishedInHour;
 
         timeline.push({ 
           hora: horaStr, 
           abertos: abertosAgora, 
-          finalizados: finishedInHour
+          finalizados: finalizadosReal
         });
       }
       return timeline;

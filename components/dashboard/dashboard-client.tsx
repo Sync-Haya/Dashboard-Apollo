@@ -3,9 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { KpiCard } from './kpi-card';
 import { TimelineChart } from './timeline-chart';
-import { AtendentesTable } from './atendentes-table';
 import { RecentTickets } from './recent-tickets';
-import { AttendantAverages } from './attendant-averages';
 import { mockDashboardData } from '@/lib/mock-data';
 import {
   AlertCircle,
@@ -321,7 +319,7 @@ export function DashboardClient() {
         </div>
       </header>
 
-      <main className="p-4 xl:p-6 space-y-6">
+      <main className="p-4 xl:p-6 flex flex-col flex-1 min-h-0 gap-4 xl:gap-6">
         {/* Erros */}
         {ap.error && (
           <div className="bg-destructive/10 border border-destructive/20 rounded-xl px-4 py-3 text-destructive text-sm font-medium flex items-center gap-3">
@@ -366,26 +364,16 @@ export function DashboardClient() {
           />
         </div>
 
-        {/* Layout TV: Gráfico em cima (Tela inteira), Médias, Tabelas em baixo */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Gráfico de Linhas - Full Width */}
-          <div className="lg:col-span-12 h-[450px] xl:h-[500px]">
-            <TimelineChart data={ap.timeline || []} title="Fluxo de Chamados (Abertos agora vs Finalizados)" isApollo />
-          </div>
-
-          {/* Média por Atendente - Full Width (em baixo do gráfico) */}
-          <div className="lg:col-span-12">
-            <AttendantAverages data={ap.atendentes || []} />
-          </div>
-
-          {/* Últimos Chamados (Esquerda) */}
-          <div className="lg:col-span-8">
+        {/* Layout TV: Últimos Chamados em cima, Gráfico em baixo */}
+        <div className="flex flex-col flex-1 min-h-0 gap-4 xl:gap-6">
+          {/* Últimos Chamados - Flex 1 (preenche o espaço) */}
+          <div className="flex-1 min-h-0">
             <RecentTickets data={ap.recentes || []} title="Últimos Chamados Identificados" />
           </div>
 
-          {/* Ranking (Direita - ao lado dos recentes) */}
-          <div className="lg:col-span-4 h-full">
-            <AtendentesTable data={ap.atendentes || []} />
+          {/* Gráfico de Linhas - Fixed Height (diminuído um pouco) */}
+          <div className="h-[250px] xl:h-[300px] shrink-0">
+            <TimelineChart data={ap.timeline || []} title="Fluxo de Chamados (Abertos agora vs Finalizados)" isApollo />
           </div>
         </div>
       </main>
