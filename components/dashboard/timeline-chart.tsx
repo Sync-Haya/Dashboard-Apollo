@@ -67,7 +67,7 @@ export function TimelineChart({ data, title, isApollo }: TimelineChartProps) {
             <Area 
               type="monotone" 
               dataKey="abertos" 
-              name="Pendentes (Abertos Agora)" 
+              name="Abertos no Horário" 
               stroke="#f97316" 
               fillOpacity={1}
               fill="url(#colorAbertos)"

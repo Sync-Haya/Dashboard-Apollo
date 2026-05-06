@@ -35,59 +35,58 @@ export async function GET(request: Request) {
     const apTickets = await fetchApolloTickets(todayStr, customToken);
     const apCounts = calcApolloCountsFromTickets(apTickets);
 
-    // Timeline por hora (Apollo) - Lógica de Fluxo (Abertos agora vs Finalizados no dia)
+    // Timeline de 15 em 15 minutos (Apollo) - Identificação de picos
     function buildApolloTimeline() {
       const timeline: Array<{ hora: string; abertos: number; finalizados: number }> = [];
-      let cumulativeOpened = 0;
-      let cumulativeFinished = 0;
 
       const now = new Date();
       // Ajustar para fuso horário de Brasília (UTC-3)
       const brasiliaOffset = -3 * 60;
       const localTime = new Date(now.getTime() + (brasiliaOffset + now.getTimezoneOffset()) * 60000);
       
-      // Se a data da consulta não for hoje, mostramos todas as horas. 
-      // Se for hoje, zeramos as horas futuras.
       const isToday = todayStr === getTodayStr();
       const currentHour = localTime.getHours();
+      const currentMinute = localTime.getMinutes();
 
       for (let h = 7; h <= 20; h++) {
-        const horaStr = `${h.toString().padStart(2, '0')}:00`;
-        
-        let openedInHour = 0;
-        let finishedInHour = 0;
+        for (let m = 0; m <= 45; m += 15) {
+          // Parar exatamente às 20:00
+          if (h === 20 && m > 0) break;
 
-        for (const t of apTickets) {
-          const createdDate = new Date(t.DATAHORA);
-          const createdHour = (createdDate.getUTCHours() - 3 + 24) % 24;
+          const horaStr = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
           
-          if (createdHour === h) {
-            openedInHour++;
-          }
+          let openedInSlot = 0;
+          let finishedInSlot = 0;
 
-          if (t.DATAHORA_FINALIZADO) {
-            const finishedDate = new Date(t.DATAHORA_FINALIZADO);
-            const finishedHour = (finishedDate.getUTCHours() - 3 + 24) % 24;
-            if (finishedHour === h) {
-              finishedInHour++;
+          for (const t of apTickets) {
+            // Horário de abertura
+            const createdDate = new Date(t.DATAHORA);
+            const cHour = (createdDate.getUTCHours() - 3 + 24) % 24;
+            const cMin = createdDate.getUTCMinutes();
+            
+            if (cHour === h && cMin >= m && cMin < m + 15) {
+              openedInSlot++;
+            }
+
+            // Horário de fechamento
+            if (t.DATAHORA_FINALIZADO) {
+              const finishedDate = new Date(t.DATAHORA_FINALIZADO);
+              const fHour = (finishedDate.getUTCHours() - 3 + 24) % 24;
+              const fMin = finishedDate.getUTCMinutes();
+              if (fHour === h && fMin >= m && fMin < m + 15) {
+                finishedInSlot++;
+              }
             }
           }
+
+          const isFuture = isToday && (h > currentHour || (h === currentHour && m > currentMinute));
+
+          timeline.push({ 
+            hora: horaStr, 
+            abertos: isFuture ? 0 : openedInSlot, 
+            finalizados: isFuture ? 0 : finishedInSlot
+          });
         }
-
-        cumulativeOpened += openedInHour;
-        cumulativeFinished += finishedInHour;
-
-        const isFuture = isToday && h > currentHour;
-
-        // Abertos Agora = Total que abriu até agora - Total que fechou até agora
-        const abertosAgora = isFuture ? 0 : Math.max(0, cumulativeOpened - cumulativeFinished);
-        const finalizadosReal = isFuture ? 0 : finishedInHour;
-
-        timeline.push({ 
-          hora: horaStr, 
-          abertos: abertosAgora, 
-          finalizados: finalizadosReal
-        });
       }
       return timeline;
     }
