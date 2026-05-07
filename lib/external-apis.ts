@@ -293,17 +293,33 @@ export interface ApolloTicket {
   ORIGEM: string;
 }
 
+export function clearApolloTokenCache() {
+  cachedApolloToken = null;
+}
+
 export async function fetchApolloTickets(todayStr: string, customToken?: string | null): Promise<ApolloTicket[]> {
-  const token = customToken || await getApolloToken();
+  let token = customToken || await getApolloToken();
   const dataIni = `${todayStr} 00:00:00`;
   const dataFim = `${todayStr} 23:59:59`;
 
   const url = `${APOLLO_API_URL}/api/chamados?limit=200&offset=0&comProtocolo=true&chamadoDev=false&dataIni=${encodeURIComponent(dataIni)}&dataFim=${encodeURIComponent(dataFim)}&sortField=id&sortDir=desc`;
 
-  const resp = await fetch(url, {
+  let resp = await fetch(url, {
     headers: { 'Authorization': `Bearer ${token}` },
     cache: 'no-store',
   });
+
+  // Solução: Retry automático em caso de erro 401 (Unauthorized)
+  if (resp.status === 401 && !customToken) {
+    clearApolloTokenCache(); // Limpa o cache do token velho
+    token = await getApolloToken(); // Faz um novo login no servidor e pega token novo
+    
+    // Tenta a requisição mais uma vez com o token fresquinho
+    resp = await fetch(url, {
+      headers: { 'Authorization': `Bearer ${token}` },
+      cache: 'no-store',
+    });
+  }
 
   if (!resp.ok) {
     throw new Error(`Apollo API falhou: ${resp.statusText}`);
