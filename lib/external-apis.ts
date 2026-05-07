@@ -241,24 +241,9 @@ export async function fetchDropdeskAttendants(): Promise<Array<{ id: string; nam
 
 const APOLLO_API_URL = 'http://apollosg.ddns.com.br:9304';
 
-let cachedApolloToken: { token: string; expiresAt: number } | null = null;
-
-export async function getApolloToken(): Promise<string> {
-  // Priorizar token fixo fornecido pelo usuário via .env
-  const fixedToken = process.env.APOLLO_JWT_TOKEN;
-  if (fixedToken) {
-    return fixedToken;
-  }
-
-  if (cachedApolloToken && cachedApolloToken.expiresAt > Date.now() + 5 * 60 * 1000) {
-    return cachedApolloToken.token;
-  }
-
-  const login = process.env.APOLLO_LOGIN;
-  const senha = process.env.APOLLO_PASSWORD;
-
+export async function getApolloToken(login?: string | null, senha?: string | null): Promise<string> {
   if (!login || !senha) {
-    throw new Error('Credenciais Apollo nao configuradas');
+    throw new Error('Credenciais Apollo não configuradas na licença da empresa.');
   }
 
   const resp = await fetch(`${APOLLO_API_URL}/api/auth/login`, {
@@ -274,11 +259,6 @@ export async function getApolloToken(): Promise<string> {
   }
 
   const data = await resp.json();
-  cachedApolloToken = {
-    token: data.token,
-    expiresAt: Date.now() + 8 * 60 * 60 * 1000, // 8 horas
-  };
-
   return data.token;
 }
 
@@ -293,33 +273,16 @@ export interface ApolloTicket {
   ORIGEM: string;
 }
 
-export function clearApolloTokenCache() {
-  cachedApolloToken = null;
-}
-
-export async function fetchApolloTickets(todayStr: string, customToken?: string | null): Promise<ApolloTicket[]> {
-  let token = customToken || await getApolloToken();
+export async function fetchApolloTickets(todayStr: string, customToken: string): Promise<ApolloTicket[]> {
   const dataIni = `${todayStr} 00:00:00`;
   const dataFim = `${todayStr} 23:59:59`;
 
   const url = `${APOLLO_API_URL}/api/chamados?limit=200&offset=0&comProtocolo=true&chamadoDev=false&dataIni=${encodeURIComponent(dataIni)}&dataFim=${encodeURIComponent(dataFim)}&sortField=id&sortDir=desc`;
 
-  let resp = await fetch(url, {
-    headers: { 'Authorization': `Bearer ${token}` },
+  const resp = await fetch(url, {
+    headers: { 'Authorization': `Bearer ${customToken}` },
     cache: 'no-store',
   });
-
-  // Solução: Retry automático em caso de erro 401 (Unauthorized)
-  if (resp.status === 401 && !customToken) {
-    clearApolloTokenCache(); // Limpa o cache do token velho
-    token = await getApolloToken(); // Faz um novo login no servidor e pega token novo
-    
-    // Tenta a requisição mais uma vez com o token fresquinho
-    resp = await fetch(url, {
-      headers: { 'Authorization': `Bearer ${token}` },
-      cache: 'no-store',
-    });
-  }
 
   if (!resp.ok) {
     throw new Error(`Apollo API falhou: ${resp.statusText}`);

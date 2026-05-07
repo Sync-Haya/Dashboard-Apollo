@@ -8,7 +8,11 @@ import {
   calcApolloAttendants,
   fetchDropdeskTickets,
   DROPDESK_STATUS,
+  getApolloToken,
 } from '@/lib/external-apis';
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
 
 function getTodayStr(): string {
   const now = new Date();
@@ -27,12 +31,40 @@ export async function GET(request: Request) {
     const dateParam = searchParams?.get('date');
     const todayStr = dateParam || getTodayStr();
 
-    // Pegar token do header se existir
+    // Pegar chave de acesso (LIC_...) do header
     const authHeader = request.headers.get('Authorization');
-    const customToken = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null;
+    const chaveAcesso = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null;
 
-    // Buscar dados do Apollo
-    const apTickets = await fetchApolloTickets(todayStr, customToken);
+    if (!chaveAcesso) {
+      return NextResponse.json({ error: 'Nenhuma chave de acesso fornecida.' }, { status: 401 });
+    }
+
+    // Buscar a licença no banco
+    const licenca = await prisma.licenca.findUnique({
+      where: { chaveAcesso }
+    });
+
+    if (!licenca) {
+      return NextResponse.json({ error: 'Chave de acesso inválida.' }, { status: 401 });
+    }
+
+    if (!licenca.ativo) {
+      return NextResponse.json({ error: 'Licença inativa ou bloqueada.' }, { status: 401 });
+    }
+
+    if (new Date() > new Date(licenca.dataDeExpiracao)) {
+      return NextResponse.json({ error: 'Licença expirada.' }, { status: 401 });
+    }
+
+    if (!licenca.apolloLogin || !licenca.apolloSenha) {
+      return NextResponse.json({ error: 'Nenhum login Apollo configurado para esta empresa no painel Admin.' }, { status: 400 });
+    }
+
+    // Gerar token fresquinho usando as credenciais do banco
+    const tokenFresco = await getApolloToken(licenca.apolloLogin, licenca.apolloSenha);
+
+    // Buscar dados do Apollo usando o token real da empresa gerado na hora
+    const apTickets = await fetchApolloTickets(todayStr, tokenFresco);
     const apCounts = calcApolloCountsFromTickets(apTickets);
 
     // Timeline de 15 em 15 minutos (Apollo) - Identificação de picos

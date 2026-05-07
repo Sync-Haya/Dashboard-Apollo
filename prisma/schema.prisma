@@ -68,3 +68,16 @@ model SyncLog {
   
   @@index([timestamp])
 }
+
+model Licenca {
+  id              String   @id @default(cuid())
+  chaveAcesso     String   @unique
+  nomeEmpresa     String   @default("Empresa Padrão")
+  dataDaCompra    DateTime @default(now())
+  dataDeExpiracao DateTime
+  apolloLogin     String?  // Login do Apollo para auto-renovação de token
+  apolloSenha     String?  // Senha do Apollo
+  ativo           Boolean  @default(true)
+  criadoEm        DateTime @default(now())
+  atualizadoEm    DateTime @updatedAt
+}
