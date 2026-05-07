@@ -97,7 +97,7 @@ export default function LicencasAdmin() {
     }
   };
 
-  const openModal = (licenca = null) => {
+  const openModal = (licenca: any = null) => {
     if (licenca) {
       setEditItem({
         ...licenca,
